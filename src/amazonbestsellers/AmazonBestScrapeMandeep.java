@@ -29,8 +29,10 @@ import org.jsoup.Jsoup;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedCondition;
@@ -70,7 +72,7 @@ public class AmazonBestScrapeMandeep {
             linkFilePath = dirPath + "AmzonBestSellerBooks.csv";
             imagePath = dirPath + "\\imgs\\";
 
-            String outputFilePath = dirPath + "\\output\\SampleData_AmazonBestSellerBooks_" + smt.format(dt) + ".csv";
+            String outputFilePath = dirPath + "\\output\\AmazonBestSellerBooks_" + smt.format(dt) + ".csv";
             File file = new File(outputFilePath);
 
             try {
@@ -82,13 +84,13 @@ public class AmazonBestScrapeMandeep {
 
             ChromeOptions options = new ChromeOptions();
             options.addArguments("--headless");
-            //    options.setBinary("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe");
+            options.setBinary("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe");
             System.out.println("Binary location=C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe");
             driver = new ChromeDriver(options);
             driver.manage().window().maximize();
 
             resetDatabase();
-            String str[] = {
+            /* String str[] = {
                 "https://www.amazon.co.uk/gp/new-releases/books?ref_=Oct_s9_apbd_onr_hd_bw_b17GB_S&pf_rd_r=HKZ7QK4E7YSXVRB2RJ3K&pf_rd_p=5e2ba314-5607-5294-ae8e-8c939fabcdc6&pf_rd_s=merchandised-search-10&pf_rd_t=BROWSE&pf_rd_i=266239",
                 "https://www.amazon.co.uk/gp/most-gifted/books/57?ref_=Oct_s9_apbd_omg_hd_bw_bv_S&pf_rd_r=DH7NYBBRZKRV7GJDVHF7&pf_rd_p=a49edc35-128a-5a74-8f32-a0d71de6a35c&pf_rd_s=merchandised-search-10&pf_rd_t=BROWSE&pf_rd_i=57",
                 "https://www.amazon.co.uk/gp/bestsellers/books/57?ref_=Oct_s9_apbd_obs_hd_bw_bv_S&pf_rd_r=DH7NYBBRZKRV7GJDVHF7&pf_rd_p=b293d97a-4112-5884-abc8-3b1e8958ede9&pf_rd_s=merchandised-search-10&pf_rd_t=BROWSE&pf_rd_i=57",
@@ -143,8 +145,45 @@ public class AmazonBestScrapeMandeep {
                 } catch (InterruptedException ex) {
                     Logger.getLogger(AmazonBestScrapeMandeep.class.getName()).log(Level.SEVERE, null, ex);
                 }
+            }*/
+
+            //---scrape categories
+            driver.get("https://www.amazon.co.uk/books-used-books-textbooks/b/?ie=UTF8&node=266239&ref_=nav_cs_books");
+            waitForJSandJQueryToLoad(driver);
+            WebElement div = driver.findElementByClassName("octopus-pc-category-card-v2-content");
+            String[] catLinks = new String[20];
+            int i = 0;
+            for (WebElement e : div.findElements(By.tagName("a"))) {
+                if (!e.getText().equals("")) {
+                    catLinks[i] = new String();
+                    catLinks[i] = "https://www.amazon.co.uk" + e.getAttribute("href");
+                    System.out.println("Category:" + e.getText());
+                    i++;
+                }
+            }
+            // i = 0;
+            ArrayList<String> bookLinks = new ArrayList();
+            for (String cLink : catLinks) {
+
+                String categorycode = StringUtils.substringBetween(cLink, "node=", "&");
+
+                if (categorycode != null && !categorycode.equals("null")) {
+                    bookLinks.add("https://www.amazon.co.uk/gp/most-gifted/books/" + categorycode);
+                    bookLinks.add("https://www.amazon.co.uk/gp/new-releases/books/" + categorycode);
+                    bookLinks.add("https://www.amazon.co.uk/gp/bestsellers/books/" + categorycode);
+                    bookLinks.add("https://www.amazon.co.uk/gp/most-wished-for/books/" + categorycode);
+                }
+                // break;
             }
 
+            for (String s : bookLinks) {
+                scrapeBestSellerProducts(s);
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(AmazonBestScrapeMandeep.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
             System.out.println("Link scraping finished...");
             //    driver.get("https://www.google.com");
             crawlLinks();
@@ -164,6 +203,8 @@ public class AmazonBestScrapeMandeep {
         String isRecommended = "no";
         String isIncludedInPopularTitle = "no";
         String isIncludedInMustHave = "no";
+        String asin = "";
+
         if (categoryLink.contains("/bestsellers/")) {
             isBestSeller = "yes";
         } else if (categoryLink.contains("/most-wished-for/")) {
@@ -190,25 +231,29 @@ public class AmazonBestScrapeMandeep {
 
             }
             Element div = doc.getElementById("zg-ordered-list");
-            for (Element e : div.getElementsByClass("zg-item-immersion")) {
-                // String name = "";
-                String url = "";
-                Element a = e.getElementsByTag("a").first();
-                // name = a.text();
-                url = "https://www.amazon.co.uk" + a.attr("href");
-                String format = e.getElementsByClass("a-color-secondary").first().text();
-                if (format.contains("Hardcover") || format.contains("Paperback")
-                        || format.contains("Board book")) {
+            if (div != null) {
+                for (Element e : div.getElementsByClass("zg-item-immersion")) {
+                    // String name = "";
+                    String url = "";
+                    Element a = e.getElementsByTag("a").first();
+                    // name = a.text();
+                    url = "https://www.amazon.co.uk" + a.attr("href");
+                    if (!e.getElementsByClass("a-color-secondary").isEmpty()) {
+                        String format = e.getElementsByClass("a-color-secondary").first().text();
+                        if (format.contains("Hardcover") || format.contains("Paperback")
+                                || format.contains("Board book")) {
 
-                    //urlList.add(url);
-                    /* if (url.contains("?")) {
+                            //urlList.add(url);
+                            /* if (url.contains("?")) {
                     url = StringUtils.substringBefore(url, "?");
                 }*/
-                    insertLinkIntoDB(url, category, isBestSeller, isRecommended, isIncludedInPopularTitle, isIncludedInMustHave);
+                            insertLinkIntoDB(url, category, isBestSeller, isRecommended, isIncludedInPopularTitle, isIncludedInMustHave);
 
-                } else {
-                    //other format so check if paper or hardcover exisists
-                    urlCheckList.add(url);
+                        } else {
+                            //other format so check if paper or hardcover exisists
+                            urlCheckList.add(url);
+                        }
+                    }
                 }
             }
             if (!doc.getElementsByClass("a-pagination").isEmpty()) {
@@ -234,6 +279,12 @@ public class AmazonBestScrapeMandeep {
             try {
                 driver.get(url);
                 waitForJSandJQueryToLoad(driver);
+                try {
+                    //timeout
+                    Thread.sleep(3000);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(AmazonBestScrapeMandeep.class.getName()).log(Level.SEVERE, null, ex);
+                }
             } catch (Exception e) {
                 System.out.println("Extra boxes Ex:" + e);
             }
@@ -257,12 +308,7 @@ public class AmazonBestScrapeMandeep {
             } else {
                 System.out.println("Format box not found..");
             }
-            try {
-                //timeout
-                Thread.sleep(3000);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(AmazonBestScrapeMandeep.class.getName()).log(Level.SEVERE, null, ex);
-            }
+
         }
 
     }
@@ -340,6 +386,11 @@ public class AmazonBestScrapeMandeep {
                 ISBN10 = StringUtils.substringBetween(doc.html(), "ISBN-10", "</li>");
                 ISBN10 = Utility.html2text(ISBN10);
                 ISBN10 = ISBN10.replace(":", "").trim();
+                if (ISBN10.equals("")) {
+                    ISBN10 = StringUtils.substringBetween(doc.html(), "ISBN-13", "</li>");
+                    ISBN10 = Utility.html2text(ISBN10);
+                    ISBN10 = ISBN10.replace(":", "").trim();
+                }
                 // }
                 publisher = StringUtils.substringBetween(doc.html(), "<span class=\"a-text-bold\">Publisher", "</li>");
                 publisher = Utility.html2text(publisher);
@@ -401,7 +452,23 @@ public class AmazonBestScrapeMandeep {
                         boardbookRRP = Utility.html2text(boardbookRRP);
                         boardbookRRP = boardbookRRP.replace("Â", "");
                     }
+                } else if (doc.getElementById("buybox") != null) {
+                    Element b = doc.getElementById("buybox");
+                    if (format.equalsIgnoreCase("Paperback")) {
+                        paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                        paperRRP = Utility.html2text(paperRRP);
+                        paperRRP = paperRRP.replace("Â", "");
+                    } else if (format.equalsIgnoreCase("Hardcover")) {
+                        hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                        hardcoverRRP = Utility.html2text(hardcoverRRP);
+                        hardcoverRRP = hardcoverRRP.replace("Â", "");
+                    } else if (format.equalsIgnoreCase("Board book")) {
+                        boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                        boardbookRRP = Utility.html2text(boardbookRRP);
+                        boardbookRRP = boardbookRRP.replace("Â", "");
+                    }
                 }
+
                 if (doc.getElementById("buyNewSection") != null) {
                     if (format.equalsIgnoreCase("Paperback")) {
                         paperPrice = doc.getElementById("buyNewSection").text();
@@ -413,6 +480,19 @@ public class AmazonBestScrapeMandeep {
                     }
                     if (format.equalsIgnoreCase("Board book")) {
                         boardbookPrice = doc.getElementById("buyNewSection").text();
+                        boardbookPrice = boardbookPrice.replace("Â", "");
+                    }
+                } else if (doc.getElementById("apub-pf-special-price") != null) {
+                    if (format.equalsIgnoreCase("Paperback")) {
+                        paperPrice = doc.getElementById("apub-pf-special-price").text();
+                        paperPrice = paperPrice.replace("Â", "");
+                    }
+                    if (format.equalsIgnoreCase("Hardcover")) {
+                        hardcoverPrice = doc.getElementById("apub-pf-special-price").text();
+                        hardcoverPrice = hardcoverPrice.replace("Â", "");
+                    }
+                    if (format.equalsIgnoreCase("Board book")) {
+                        boardbookPrice = doc.getElementById("apub-pf-special-price").text();
                         boardbookPrice = boardbookPrice.replace("Â", "");
                     }
                 }
@@ -437,9 +517,14 @@ public class AmazonBestScrapeMandeep {
                                                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0")
                                                 .timeout(0).get();*/
 
-                                if (a.text().equalsIgnoreCase("Hardcover")) {
+                                if (a.text().contains("Hardcover")) {
                                     if (doc.getElementById("buyBoxInner") != null) {
                                         Element b = doc.getElementById("buyBoxInner");
+                                        hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                                        hardcoverRRP = Utility.html2text(hardcoverRRP);
+                                        hardcoverRRP = hardcoverRRP.replace("Â", "");
+                                    } else if (doc.getElementById("buybox") != null) {
+                                        Element b = doc.getElementById("buybox");
                                         hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
                                         hardcoverRRP = Utility.html2text(hardcoverRRP);
                                         hardcoverRRP = hardcoverRRP.replace("Â", "");
@@ -447,10 +532,19 @@ public class AmazonBestScrapeMandeep {
                                     if (doc.getElementById("buyNewSection") != null) {
                                         hardcoverPrice = doc.getElementById("buyNewSection").text();
                                         hardcoverPrice = hardcoverPrice.replace("Â", "");
+                                    } else if (doc.getElementById("apub-pf-special-price") != null) {
+                                        hardcoverPrice = doc.getElementById("apub-pf-special-price").text();
+                                        hardcoverPrice = hardcoverPrice.replace("Â", "");
                                     }
-                                } else if (a.text().equalsIgnoreCase("Paperback")) {
+                                    format = format + ", Hardcover";
+                                } else if (a.text().contains("Paperback")) {
                                     if (doc.getElementById("buyBoxInner") != null) {
                                         Element b = doc.getElementById("buyBoxInner");
+                                        paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                                        paperRRP = Utility.html2text(paperRRP);
+                                        paperRRP = paperRRP.replace("Â", "");
+                                    } else if (doc.getElementById("buybox") != null) {
+                                        Element b = doc.getElementById("buybox");
                                         paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
                                         paperRRP = Utility.html2text(paperRRP);
                                         paperRRP = paperRRP.replace("Â", "");
@@ -458,15 +552,30 @@ public class AmazonBestScrapeMandeep {
                                     if (doc.getElementById("buyNewSection") != null) {
                                         paperPrice = doc.getElementById("buyNewSection").text();
                                         paperPrice = paperPrice.replace("Â", "");
+                                    } else if (doc.getElementById("apub-pf-special-price") != null) {
+                                        paperPrice = doc.getElementById("apub-pf-special-price").text();
+                                        paperPrice = paperPrice.replace("Â", "");
                                     }
-
                                     //GET ISBN10 also
-                                    ISBN10 = StringUtils.substringBetween(doc.html(), "ISBN-10", "</li>");
-                                    ISBN10 = Utility.html2text(ISBN10);
-                                    ISBN10 = ISBN10.replace(":", "").trim();
-                                } else if (a.text().equalsIgnoreCase("Board book")) {
+                                    String str = StringUtils.substringBetween(doc.html(), "ISBN-10", "</li>");
+                                    if (str != null) {
+                                        ISBN10 = Utility.html2text(str);
+                                        ISBN10 = ISBN10.replace(":", "").trim();
+                                    }
+                                    if (ISBN10.equals("")) {
+                                        ISBN10 = StringUtils.substringBetween(doc.html(), "ISBN-13", "</li>");
+                                        ISBN10 = Utility.html2text(ISBN10);
+                                        ISBN10 = ISBN10.replace(":", "").trim();
+                                    }
+                                    format = format + ", Paperback";
+                                } else if (a.text().contains("Board book")) {
                                     if (doc.getElementById("buyBoxInner") != null) {
                                         Element b = doc.getElementById("buyBoxInner");
+                                        boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                                        boardbookRRP = Utility.html2text(boardbookRRP);
+                                        boardbookRRP = boardbookRRP.replace("Â", "");
+                                    } else if (doc.getElementById("buybox") != null) {
+                                        Element b = doc.getElementById("buybox");
                                         boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
                                         boardbookRRP = Utility.html2text(boardbookRRP);
                                         boardbookRRP = boardbookRRP.replace("Â", "");
@@ -474,12 +583,18 @@ public class AmazonBestScrapeMandeep {
                                     if (doc.getElementById("buyNewSection") != null) {
                                         boardbookPrice = doc.getElementById("buyNewSection").text();
                                         boardbookPrice = boardbookPrice.replace("Â", "");
+                                    } else if (doc.getElementById("apub-pf-special-price") != null) {
+                                        boardbookPrice = doc.getElementById("apub-pf-special-price").text();
+                                        boardbookPrice = boardbookPrice.replace("Â", "");
                                     }
+                                    format = format + ", Board book";
                                 }
 
                             }
                         }
                     }
+                } else {
+                    System.out.println("Other formats not found...");
                 }
 
                 String insertQ = "INSERT INTO `amazonbooks_bestseller`.`book_master`\n"
@@ -609,6 +724,8 @@ public class AmazonBestScrapeMandeep {
     private static void insertLinkIntoDB(String url, String category, String isBestSeller, String isRecommended,
             String isIncludedInPopularTitle, String isIncludedInMustHave) {
         ResultSet rs = dbRecord(url);
+        String asin = StringUtils.substringBetween(url, "/dp/", "/");
+
         if (rs == null) {
             String insertQ = "INSERT INTO `amazonbooks_bestseller`.`link_master`\n"
                     + "(\n"
@@ -617,7 +734,8 @@ public class AmazonBestScrapeMandeep {
                     + "`is_bestSeller`,\n"
                     + "`is_recommended`,\n"
                     + "`is_isIncludedInPopularTitle`,\n"
-                    + "`is_IncludedInMustHave`)\n"
+                    + "`is_IncludedInMustHave`,\n"
+                    + "`asin`)\n"
                     + "VALUES\n"
                     + "("
                     + "'" + Utility.prepareString(url) + "',"
@@ -625,7 +743,8 @@ public class AmazonBestScrapeMandeep {
                     + "'" + Utility.prepareString(isBestSeller) + "',"
                     + "'" + Utility.prepareString(isRecommended) + "',"
                     + "'" + Utility.prepareString(isIncludedInPopularTitle) + "',"
-                    + "'" + Utility.prepareString(isIncludedInMustHave) + "'"
+                    + "'" + Utility.prepareString(isIncludedInMustHave) + "',"
+                    + "'" + Utility.prepareString(asin) + "'"
                     + ")";
             MyConnection.getConnection("amazonbooks_bestseller");
             MyConnection.insertData(insertQ);
