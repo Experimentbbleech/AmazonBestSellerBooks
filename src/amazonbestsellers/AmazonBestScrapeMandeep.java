@@ -439,33 +439,41 @@ public class AmazonBestScrapeMandeep {
                 }
                 if (doc.getElementById("buyBoxInner") != null) {
                     Element b = doc.getElementById("buyBoxInner");
-                    if (format.equalsIgnoreCase("Paperback")) {
-                        paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                        paperRRP = Utility.html2text(paperRRP);
-                        paperRRP = paperRRP.replace("Â", "");
-                    } else if (format.equalsIgnoreCase("Hardcover")) {
-                        hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                        hardcoverRRP = Utility.html2text(hardcoverRRP);
-                        hardcoverRRP = hardcoverRRP.replace("Â", "");
-                    } else if (format.equalsIgnoreCase("Board book")) {
-                        boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                        boardbookRRP = Utility.html2text(boardbookRRP);
-                        boardbookRRP = boardbookRRP.replace("Â", "");
+                    if (!b.text().contains("Buy Used")) {
+                        if (format.equalsIgnoreCase("Paperback")) {
+                            paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                            paperRRP = Utility.html2text(paperRRP);
+                            paperRRP = paperRRP.replace("Â", "");
+                        } else if (format.equalsIgnoreCase("Hardcover")) {
+                            hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                            hardcoverRRP = Utility.html2text(hardcoverRRP);
+                            hardcoverRRP = hardcoverRRP.replace("Â", "");
+                        } else if (format.equalsIgnoreCase("Board book")) {
+                            boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                            boardbookRRP = Utility.html2text(boardbookRRP);
+                            boardbookRRP = boardbookRRP.replace("Â", "");
+                        }
+                    } else {
+                        format = "";
                     }
                 } else if (doc.getElementById("buybox") != null) {
                     Element b = doc.getElementById("buybox");
-                    if (format.equalsIgnoreCase("Paperback")) {
-                        paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                        paperRRP = Utility.html2text(paperRRP);
-                        paperRRP = paperRRP.replace("Â", "");
-                    } else if (format.equalsIgnoreCase("Hardcover")) {
-                        hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                        hardcoverRRP = Utility.html2text(hardcoverRRP);
-                        hardcoverRRP = hardcoverRRP.replace("Â", "");
-                    } else if (format.equalsIgnoreCase("Board book")) {
-                        boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                        boardbookRRP = Utility.html2text(boardbookRRP);
-                        boardbookRRP = boardbookRRP.replace("Â", "");
+                    if (!b.text().contains("Buy Used")) {
+                        if (format.equalsIgnoreCase("Paperback")) {
+                            paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                            paperRRP = Utility.html2text(paperRRP);
+                            paperRRP = paperRRP.replace("Â", "");
+                        } else if (format.equalsIgnoreCase("Hardcover")) {
+                            hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                            hardcoverRRP = Utility.html2text(hardcoverRRP);
+                            hardcoverRRP = hardcoverRRP.replace("Â", "");
+                        } else if (format.equalsIgnoreCase("Board book")) {
+                            boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                            boardbookRRP = Utility.html2text(boardbookRRP);
+                            boardbookRRP = boardbookRRP.replace("Â", "");
+                        }
+                    } else {
+                        format = "";
                     }
                 }
 
@@ -520,14 +528,23 @@ public class AmazonBestScrapeMandeep {
                                 if (a.text().contains("Hardcover")) {
                                     if (doc.getElementById("buyBoxInner") != null) {
                                         Element b = doc.getElementById("buyBoxInner");
-                                        hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                                        hardcoverRRP = Utility.html2text(hardcoverRRP);
-                                        hardcoverRRP = hardcoverRRP.replace("Â", "");
+
+                                        if (!b.text().contains("Buy Used")) {
+                                            hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                                            hardcoverRRP = Utility.html2text(hardcoverRRP);
+                                            hardcoverRRP = hardcoverRRP.replace("Â", "");
+                                            format = format + ", Hardcover";
+
+                                        }
                                     } else if (doc.getElementById("buybox") != null) {
                                         Element b = doc.getElementById("buybox");
-                                        hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                                        hardcoverRRP = Utility.html2text(hardcoverRRP);
-                                        hardcoverRRP = hardcoverRRP.replace("Â", "");
+                                        if (!b.text().contains("Buy Used")) {
+                                            hardcoverRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                                            hardcoverRRP = Utility.html2text(hardcoverRRP);
+                                            hardcoverRRP = hardcoverRRP.replace("Â", "");
+                                            format = format + ", Hardcover";
+
+                                        }
                                     }
                                     if (doc.getElementById("buyNewSection") != null) {
                                         hardcoverPrice = doc.getElementById("buyNewSection").text();
@@ -536,18 +553,23 @@ public class AmazonBestScrapeMandeep {
                                         hardcoverPrice = doc.getElementById("apub-pf-special-price").text();
                                         hardcoverPrice = hardcoverPrice.replace("Â", "");
                                     }
-                                    format = format + ", Hardcover";
                                 } else if (a.text().contains("Paperback")) {
                                     if (doc.getElementById("buyBoxInner") != null) {
                                         Element b = doc.getElementById("buyBoxInner");
-                                        paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                                        paperRRP = Utility.html2text(paperRRP);
-                                        paperRRP = paperRRP.replace("Â", "");
+                                        if (!b.text().contains("Buy Used")) {
+                                            paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                                            paperRRP = Utility.html2text(paperRRP);
+                                            paperRRP = paperRRP.replace("Â", "");
+                                            format = format + ", Paperback";
+                                        }
                                     } else if (doc.getElementById("buybox") != null) {
                                         Element b = doc.getElementById("buybox");
-                                        paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                                        paperRRP = Utility.html2text(paperRRP);
-                                        paperRRP = paperRRP.replace("Â", "");
+                                        if (!b.text().contains("Buy Used")) {
+                                            paperRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                                            paperRRP = Utility.html2text(paperRRP);
+                                            paperRRP = paperRRP.replace("Â", "");
+                                            format = format + ", Paperback";
+                                        }
                                     }
                                     if (doc.getElementById("buyNewSection") != null) {
                                         paperPrice = doc.getElementById("buyNewSection").text();
@@ -555,6 +577,7 @@ public class AmazonBestScrapeMandeep {
                                     } else if (doc.getElementById("apub-pf-special-price") != null) {
                                         paperPrice = doc.getElementById("apub-pf-special-price").text();
                                         paperPrice = paperPrice.replace("Â", "");
+
                                     }
                                     //GET ISBN10 also
                                     String str = StringUtils.substringBetween(doc.html(), "ISBN-10", "</li>");
@@ -567,18 +590,23 @@ public class AmazonBestScrapeMandeep {
                                         ISBN10 = Utility.html2text(ISBN10);
                                         ISBN10 = ISBN10.replace(":", "").trim();
                                     }
-                                    format = format + ", Paperback";
                                 } else if (a.text().contains("Board book")) {
                                     if (doc.getElementById("buyBoxInner") != null) {
                                         Element b = doc.getElementById("buyBoxInner");
-                                        boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                                        boardbookRRP = Utility.html2text(boardbookRRP);
-                                        boardbookRRP = boardbookRRP.replace("Â", "");
+                                        if (!b.text().contains("Buy Used")) {
+                                            boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                                            boardbookRRP = Utility.html2text(boardbookRRP);
+                                            boardbookRRP = boardbookRRP.replace("Â", "");
+                                            format = format + ", Board book";
+                                        }
                                     } else if (doc.getElementById("buybox") != null) {
                                         Element b = doc.getElementById("buybox");
-                                        boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
-                                        boardbookRRP = Utility.html2text(boardbookRRP);
-                                        boardbookRRP = boardbookRRP.replace("Â", "");
+                                        if (!b.text().contains("Buy Used")) {
+                                            boardbookRRP = StringUtils.substringBetween(b.html(), "RRP:", "</li>");
+                                            boardbookRRP = Utility.html2text(boardbookRRP);
+                                            boardbookRRP = boardbookRRP.replace("Â", "");
+                                            format = format + ", Board book";
+                                        }
                                     }
                                     if (doc.getElementById("buyNewSection") != null) {
                                         boardbookPrice = doc.getElementById("buyNewSection").text();
@@ -587,7 +615,7 @@ public class AmazonBestScrapeMandeep {
                                         boardbookPrice = doc.getElementById("apub-pf-special-price").text();
                                         boardbookPrice = boardbookPrice.replace("Â", "");
                                     }
-                                    format = format + ", Board book";
+
                                 }
 
                             }
@@ -792,7 +820,7 @@ public class AmazonBestScrapeMandeep {
         String selectQ = "select `name`,author,publisher,publication_date,format,ISBN10,paper_rrp,paper_price,"
                 + "boardbook_rrp,boardbook_price,hardcover_rrp,hardcover_price,`desc`,imageName,link,category,"
                 + "is_bestSeller,is_recommended,is_isIncludedInPopularTitle,is_IncludedInMustHave \n"
-                + "from link_master l,book_master b where b.link_id=l.link_id;";
+                + "from link_master l,book_master b where b.link_id=l.link_id where format!=''";
         MyConnection.getConnection("amazonbooks_bestseller");
         ResultSet rs = MyConnection.getResultSet(selectQ);
         String header = "Main Category,Sub Category,Product Title,Author/ Director/ Artist,Publisher/ Studio/ Brand,"
